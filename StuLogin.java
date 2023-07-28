@@ -1,11 +1,10 @@
-package professor;
+package student;
 
 import java.util.Scanner;
+
 import professor.ProMain;
 
-/* 교수 로그인일 경우 */
-
-public class ProLogin {
+public class StuLogin {
 	public static void main(String[] args) {
 		Scanner scanner = new Scanner(System.in);
 		
@@ -17,7 +16,7 @@ public class ProLogin {
 		int chance = 0;
 		
 		while (chance < 3) { // 3번 틀리면 프로그램 종료
-			System.out.print("ID : ");
+			System.out.print("학번 : ");
 			String scannerId = scanner.nextLine(); // 아이디 입력
 			
 			System.out.print("PW : ");
@@ -26,7 +25,7 @@ public class ProLogin {
 			if(scannerId.equals(id)) { // 아이디가 일치하는지 확인
 				if(scannerPw.equals(pw)) { // 비밀번호가 일치하는지 확인
 					System.out.println("로그인 성공");
-					ProMain proMain = new ProMain(); // 아이디와 비밀번호가 일치하면 교수 메인메뉴로 이동
+					ProMain proMain = new ProMain(); // 아이디와 비밀번호가 일치하면 로그인 성공
 					break;
 				}
 			}
