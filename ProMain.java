@@ -1,10 +1,10 @@
-package professor;
+package project_score;
+
+import project_score.proMethod;
 
 public class ProMain {
-
 	public static void main(String[] args) {
-		// TODO Auto-generated method stub
-
+		proMethod pro = new proMethod();
+		pro.mainMenu();
 	}
-
 }

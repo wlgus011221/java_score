@@ -10,4 +10,7 @@ public class Score {
 	private int kor;
 	private int mat;
 	private int eng;
+	private int sum;
+	private String grade;
+	private int rank;
 }

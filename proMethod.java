@@ -6,8 +6,10 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Scanner;
+import project_score.Score;
 
 public class proMethod {
+	
 	// Field
 	private Scanner scanner = new Scanner(System.in);
 	private Connection conn;
@@ -35,7 +37,7 @@ public class proMethod {
 		System.out.println("1.입력 | 2.조회 | 3.전체 삭제 | 4.집계표 | 5.종료");
 		System.out.println("--------------------------------------------");
 		System.out.print("메뉴 선택 : ");
-		String menuNo = scanner.nextLine();	// 입력&수정하고 스캐너가 실행 안 되고 그냥 종료됨.(삭제, 전체삭제는 문제없음) 한줄씩 실행으로 찾아보자.
+		String menuNo = scanner.nextLine();
 		System.out.println();
 		
 		switch(menuNo) {
@@ -47,8 +49,9 @@ public class proMethod {
 		}
 	}
 	
-	// 확인 완료
+	
 	public void insert() {
+		// 학생 정보 (이름 / 학번 / 국어 / 수학 / 영어 성적) 입력
 		System.out.println("[학생 정보 입력]");
 		System.out.print("이름 : ");
 		score.setStuName(scanner.nextLine());
@@ -61,6 +64,22 @@ public class proMethod {
 		System.out.print("영어 성적 : ");
 		score.setEng(scanner.nextInt());
 		
+		// DB에 합 추가
+		score.setSum(score.getKor() + score.getMat() + score.getEng());
+		
+		// DB에 등급 추가
+		if((score.getSum() / 3) >= 90) {
+			score.setGrade("A");
+		} else if((score.getSum() / 3) >= 80) {
+			score.setGrade("B");
+		} else if((score.getSum() / 3) >= 70) {
+			score.setGrade("C");
+		} else if((score.getSum() / 3) >= 60) {
+			score.setGrade("D");
+		} else {
+			score.setGrade("F");
+		}
+		
 		scanner.nextLine();
 		/* Scanner.nextInt() 메소드가 사용자가 입력한 enter(개행문자) 를 제거하지 않음.
 		 * 남겨진 개행문자가 다음 scan.nextLine()의 입력으로 처리되어 곧바로 개행됨
@@ -68,8 +87,8 @@ public class proMethod {
 		
 		try {
 			// 매개변수화된 SQL문 작성
-			String sql = "" + "INSERT INTO students (stuName, stuNo, kor, mat, eng) "
-			+ "VALUES(?, ?, ?, ?, ?)";
+			String sql = "" + "INSERT INTO students (stuName, stuNo, kor, mat, eng, sum, grade) "
+					+ "VALUES(?, ?, ?, ?, ?, ?, ?)";
 			
 			// PreparedStatement 얻기 및 값 지정
 			PreparedStatement pstmt = conn.prepareStatement(sql);
@@ -78,6 +97,8 @@ public class proMethod {
 			pstmt.setInt(3, score.getKor());
 			pstmt.setInt(4, score.getMat());
 			pstmt.setInt(5, score.getEng());
+			pstmt.setInt(6, score.getSum());
+			pstmt.setString(7, score.getGrade());
 				
 			// SQL문 실행
 			pstmt.executeUpdate();
@@ -91,15 +112,19 @@ public class proMethod {
 		mainMenu();
 	}
 	
-	// 완료
+	
 	public void search() {
 		System.out.println("[조회할 학생의 학번을 입력하세요.]");
 		System.out.print("학번 : ");
 		String stuNo = scanner.nextLine();
 		
+		/* 석차를 추가하고 싶었는데 석차가 1로만 나와서 추후에 해결 필요 */
+		
 		try {
-			String sql = "" + "SELECT stuName, stuNo, kor, mat, eng " + 
-		"FROM students " + "WHERE stuNo=?";
+			String sql = "" + "SELECT stuName, stuNo, kor, mat, eng, sum, sum/3, grade "
+					+ "FROM students "
+					+ "WHERE stuNo=?";
+			
 			PreparedStatement pstmt = conn.prepareStatement(sql);
 			pstmt.setString(1, stuNo);
 			ResultSet rs = pstmt.executeQuery();
@@ -110,13 +135,19 @@ public class proMethod {
 				score.setKor(rs.getInt("kor"));
 				score.setMat(rs.getInt("mat"));
 				score.setEng(rs.getInt("eng"));
+				score.setSum(rs.getInt("sum"));
+				score.setGrade(rs.getString("grade"));
 				
-				System.out.println(stuNo + "조회했습니다.");
+				System.out.println();
+				System.out.println(stuNo + " 학생을 조회했습니다.");
 				System.out.println("이름 : " + score.getStuName());
 				System.out.println("학번 : " + score.getStuNo());
 				System.out.println("국어 : " + score.getKor());
 				System.out.println("수학 : " + score.getMat());
 				System.out.println("영어 : " + score.getEng());
+				System.out.println("합 : " + score.getSum());
+				System.out.println("평균 : " + score.getSum() / 3);
+				System.out.println("등급 : " + score.getGrade());
 				System.out.println();
 
 				// 보조 메뉴 출력
@@ -147,7 +178,7 @@ public class proMethod {
 		mainMenu();
 	}
 	
-	// 완료
+	
 	public void update(Score score, String stuNo) {
 		System.out.println("[수정]");
 		System.out.print("이름 : ");
@@ -161,14 +192,30 @@ public class proMethod {
 		System.out.print("영어 : ");
 		score.setEng(scanner.nextInt());
 		
+		// 합
+		score.setSum(score.getKor() + score.getMat() + score.getEng());
+		
+		// 등급 산출
+		if((score.getSum() / 3) >= 90) {
+			score.setGrade("A");
+		} else if((score.getSum() / 3) >= 80) {
+			score.setGrade("B");
+		} else if((score.getSum() / 3) >= 70) {
+			score.setGrade("C");
+		} else if((score.getSum() / 3) >= 60) {
+			score.setGrade("D");
+		} else {
+			score.setGrade("F");
+		}
+		
 		scanner.nextLine();
 		/* Scanner.nextInt() 메소드가 사용자가 입력한 enter(개행문자) 를 제거하지 않음.
 		 * 남겨진 개행문자가 다음 scan.nextLine()의 입력으로 처리되어 곧바로 개행됨
 		 * 이를 방지하기 위해서 scanner.nextLine()을 작성하여 개행문자 제거 */
 		
 		try {
-			String sql = "" + "UPDATE students SET stuName=?, stuNo=?, kor=?, mat=?, eng=? " 
-		+ "WHERE stuNo=?";
+			String sql = "" + "UPDATE students SET stuName=?, stuNo=?, kor=?, mat=?, eng=?, sum=?, grade=? "
+					+ "WHERE stuNo=?";
 			
 			PreparedStatement pstmt = conn.prepareStatement(sql);
 			pstmt.setString(1, score.getStuName());
@@ -176,7 +223,9 @@ public class proMethod {
 			pstmt.setInt(3, score.getKor());
 			pstmt.setInt(4, score.getMat());
 			pstmt.setInt(5, score.getEng());
-			pstmt.setString(6, stuNo);
+			pstmt.setInt(6, score.getSum());
+			pstmt.setString(7, score.getGrade());
+			pstmt.setString(8, stuNo);
 			
 			pstmt.executeUpdate();
 			pstmt.close();
@@ -187,7 +236,7 @@ public class proMethod {
 		mainMenu();
 	}
 	
-	// 확인 완료
+	
 	public void delete(Score score) {
 		try {
 			String sql = "DELETE FROM students WHERE stuNo=?";
@@ -204,7 +253,7 @@ public class proMethod {
 		mainMenu();
 	}
 	
-	// 확인 완료
+	
 	public void clear() {
 		System.out.println("입력된 모든 데이터를 삭제하시겠습니까?");
 		System.out.println("--------------------------------------------");
@@ -228,40 +277,136 @@ public class proMethod {
 		mainMenu();
 	}
 	
+	
 	public void read() {
 		System.out.println();
 		System.out.println("1.이름순 | 2.성적순 | 3.학번순 | 4.취소");
 		System.out.print("메뉴 선택 : ");
 		String menuNo = scanner.nextLine();
 		
-		// if로 해야 하나?
 		switch(menuNo) {
-		case "1" -> read_name();
-		case "2" -> read_score();
-		case "3" -> read_No();
-		case "4" -> mainMenu();
-		default -> System.out.println("1-4 중에서 선택해주세요.");
+			case "1" -> read_name();
+			case "2" -> read_score();
+			case "3" -> read_No();
+			case "4" -> mainMenu();
 		}
 	}
+	
 	
 	public void read_name() {
 		// 이름순
 		
-		/* 이름 | 학번 | 국어 | 수학 | 영어 | 합 | 평균 | 등급 | 석차
-		 * 
-		 *  뷰를 이용하는게 좋을듯! 근데 뷰를 할 수 있나..?
-		 *  while(rs.next()) <- n개의 데이터 행을 가져올 경우 */
+		System.out.println();
+		System.out.println("[이름순 조회]");
+		System.out.println(" 이름 | 학번 | 국어 | 수학 | 영어 | 합 | 평균 | 등급 | 석차");
+		System.out.println("-------------------------------------------------");
+		
+		try {
+			String sql = "" + "SELECT stuName, stuNo, kor, mat, eng, sum, (sum/3), grade, "
+					+ "ROW_NUMBER() OVER (ORDER BY sum DESC) AS RANK "
+					+ "FROM students "
+					+ "ORDER BY stuName";
+			
+			PreparedStatement pstmt = conn.prepareStatement(sql);
+			ResultSet rs = pstmt.executeQuery();
+			
+			while(rs.next()) {
+				score.setStuName(rs.getString("stuName"));
+				score.setStuNo(rs.getString("stuNo"));
+				score.setKor(rs.getInt("kor"));
+				score.setMat(rs.getInt("mat"));
+				score.setEng(rs.getInt("eng"));
+				score.setSum(rs.getInt("sum"));
+				score.setGrade(rs.getString("grade"));
+				score.setRank(rs.getInt("RANK"));
+				System.out.printf("%-4s %-4s  %-3d  %-3d  %-3d  %-3d  %-3.2f  %s    %d \n", score.getStuName(), score.getStuNo(), score.getKor(), score.getMat(), score.getEng(), score.getSum(), (double)(score.getSum()/3), score.getGrade(), score.getRank());
+			}
+			rs.close();
+			pstmt.close();
+		} catch(SQLException e) {
+			e.printStackTrace();
+			exit();
+		}
+		mainMenu();
 	}
+	
 	
 	public void read_score() {
 		// 성적순
 		
+		System.out.println();
+		System.out.println("[성적순 조회]");
+		System.out.println(" 이름 | 학번 | 국어 | 수학 | 영어 | 합 | 평균 | 등급 | 석차");
+		System.out.println("-------------------------------------------------");
+		
+		try {
+			String sql = "" + "SELECT stuName, stuNo, kor, mat, eng, sum, (sum/3), grade, "
+					+ "ROW_NUMBER() OVER (ORDER BY sum DESC) AS RANK "
+					+ "FROM students";
+			
+			PreparedStatement pstmt = conn.prepareStatement(sql);
+			ResultSet rs = pstmt.executeQuery();
+			
+			while(rs.next()) {
+				score.setStuName(rs.getString("stuName"));
+				score.setStuNo(rs.getString("stuNo"));
+				score.setKor(rs.getInt("kor"));
+				score.setMat(rs.getInt("mat"));
+				score.setEng(rs.getInt("eng"));
+				score.setSum(rs.getInt("sum"));
+				score.setGrade(rs.getString("grade"));
+				score.setRank(rs.getInt("RANK"));
+				System.out.printf("%-4s %-4s  %-3d  %-3d  %-3d  %-3d  %-3.2f  %s    %d \n", score.getStuName(), score.getStuNo(), score.getKor(), score.getMat(), score.getEng(), score.getSum(), (double)(score.getSum()/3), score.getGrade(), score.getRank());
+				//System.out.println(score.getStuName() + " " + score.getStuNo() + " " + score.getKor() + " " + score.getMat() + " " + score.getEng() 
+				//+ " " + score.getSum() + " " + (score.getSum()/3) + " " + score.getGrade() + " " + score.getRank());
+			}
+			rs.close();
+			pstmt.close();
+		} catch(SQLException e) {
+			e.printStackTrace();
+			exit();
+		}
+		mainMenu();
 	}
+	
 	
 	public void read_No() {
 		// 학번순
 		
+		System.out.println();
+		System.out.println("[성적순 조회]");
+		System.out.println(" 이름 | 학번 | 국어 | 수학 | 영어 | 합 | 평균 | 등급 | 석차");
+		System.out.println("-------------------------------------------------");
+		
+		try {
+			String sql = "" + "SELECT stuName, stuNo, kor, mat, eng, sum, (sum/3), grade, "
+					+ "ROW_NUMBER() OVER (ORDER BY sum DESC) AS RANK "
+					+ "FROM students "
+					+ "ORDER BY stuNo";
+			
+			PreparedStatement pstmt = conn.prepareStatement(sql);
+			ResultSet rs = pstmt.executeQuery();
+			
+			while(rs.next()) {
+				score.setStuName(rs.getString("stuName"));
+				score.setStuNo(rs.getString("stuNo"));
+				score.setKor(rs.getInt("kor"));
+				score.setMat(rs.getInt("mat"));
+				score.setEng(rs.getInt("eng"));
+				score.setSum(rs.getInt("sum"));
+				score.setGrade(rs.getString("grade"));
+				score.setRank(rs.getInt("RANK"));
+				System.out.printf("%-4s %-4s  %-3d  %-3d  %-3d  %-3d  %-3.2f  %s    %d \n", score.getStuName(), score.getStuNo(), score.getKor(), score.getMat(), score.getEng(), score.getSum(), (double)(score.getSum()/3), score.getGrade(), score.getRank());
+			}
+			rs.close();
+			pstmt.close();
+		} catch(SQLException e) {
+			e.printStackTrace();
+			exit();
+		}
+		mainMenu();
 	}
+	
 	
 	public void exit() {
 		if(conn != null) {
@@ -271,10 +416,5 @@ public class proMethod {
 		}
 		System.out.println("종료합니다.");
 		System.exit(0);
-	}
-	
-	public static void main(String[] args) {
-		proMethod pro = new proMethod();
-		pro.mainMenu();
 	}
 }
