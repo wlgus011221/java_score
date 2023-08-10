@@ -1,0 +1,8 @@
+CREATE TABLE professors(
+    proId varchar2(50) not null,
+    proPw varchar2(50) not null,
+    proName varchar2(50) not null,
+    proEmail varchar2(50),
+    proAge number(3),
+    proClass varchar2(1)
+);
