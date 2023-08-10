@@ -1,0 +1,10 @@
+CREATE TABLE students(
+    stuName varchar2(50) not null,
+    stuNo varchar2(5) primary key,
+    stuBirth varchar2(6) not null,
+    kor number default 0,
+    mat number default 0,
+    eng number default 0,
+    sum number default 0,
+    grade varchar(1) default 'F'
+);
